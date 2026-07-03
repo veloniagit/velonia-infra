@@ -1,0 +1,14 @@
+name: ${PROJECT_NAME}
+
+include:
+  - compose/traefik.yml
+  - compose/postgres.yml
+  - compose/redis.yml
+  - compose/evolution.yml
+  - compose/n8n.yml
+  - compose/portainer.yml
+
+networks:
+  velonia_network:
+    name: velonia_network
+    driver: bridge
