@@ -1,0 +1,23 @@
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: velonia_traefik
+    restart: always
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - ../.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ../traefik/dynamic:/etc/traefik/dynamic:ro
+      - ../traefik/acme.json:/letsencrypt/acme.json
+    networks:
+      - velonia_network
+
+networks:
+  velonia_network:
+    external: true
