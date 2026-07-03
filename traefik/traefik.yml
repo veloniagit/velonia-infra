@@ -29,7 +29,7 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: ${EMAIL}
+      email: contato@velonia.com.br
       storage: /letsencrypt/acme.json
 
       httpChallenge:
