@@ -1,0 +1,36 @@
+services:
+  velon-web:
+    image: velon-web:1.42.3
+    container_name: velon_web
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: "production"
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+
+      EVOLUTION_API_URL: ${EVOLUTION_API_URL}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
+      EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE}
+      WHATSAPP_ADMIN_TOKEN: ${WHATSAPP_ADMIN_TOKEN}
+      EVOLUTION_WEBHOOK_TOKEN: ${EVOLUTION_WEBHOOK_TOKEN}
+      VELON_INTERNAL_URL: ${VELON_INTERNAL_URL}
+      EVOLUTION_INTERNAL_URL: ${EVOLUTION_INTERNAL_URL}
+
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
+
+    networks:
+      - velonia_network
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.velon-web.rule=Host(`${CRM_DOMAIN}`)"
+      - "traefik.http.routers.velon-web.entrypoints=websecure"
+      - "traefik.http.routers.velon-web.tls=true"
+      - "traefik.http.routers.velon-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.velon-web.loadbalancer.server.port=3000"
+      - "traefik.docker.network=velonia_network"
+
+networks:
+  velonia_network:
+    external: true

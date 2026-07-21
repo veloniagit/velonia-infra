@@ -1,0 +1,1059 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["catalogo", "comercial", "crm", "dashboard", "financeiro", "public"]
+}
+
+model atividades {
+  id              BigInt                   @id @default(autoincrement())
+  lead_id         BigInt?
+  oportunidade_id BigInt?
+  vendedor_id     BigInt?
+  tipo            String                   @db.VarChar(50)
+  titulo          String                   @db.VarChar(255)
+  descricao       String?
+  agendado_para   DateTime?                @db.Timestamptz(6)
+  concluido_em    DateTime?                @db.Timestamptz(6)
+  status          String                   @default("pendente") @db.VarChar(30)
+  criado_em       DateTime                 @default(now()) @db.Timestamptz(6)
+  leads           comercial_leads?         @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  oportunidades   comercial_oportunidades? @relation(fields: [oportunidade_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vendedores      comercial_vendedores?    @relation(fields: [vendedor_id], references: [id], onUpdate: NoAction)
+
+  @@index([status], map: "idx_atividades_status")
+  @@index([vendedor_id], map: "idx_atividades_vendedor")
+  @@schema("comercial")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model contratos {
+  id                  BigInt                 @id @default(autoincrement())
+  cliente_id          BigInt?
+  proposta_id         BigInt?
+  vendedor_id         BigInt?
+  numero              String?                @unique @db.VarChar(50)
+  plano               String?                @db.VarChar(100)
+  valor_implantacao   Decimal                @default(0) @db.Decimal(14, 2)
+  mensalidade         Decimal                @default(0) @db.Decimal(14, 2)
+  data_inicio         DateTime               @db.Date
+  data_fim            DateTime?              @db.Date
+  dia_vencimento      Int?
+  status              String                 @default("ativo") @db.VarChar(30)
+  link_documento      String?
+  assinado_em         DateTime?              @db.Timestamptz(6)
+  cancelado_em        DateTime?              @db.Timestamptz(6)
+  motivo_cancelamento String?
+  criado_em           DateTime               @default(now()) @db.Timestamptz(6)
+  atualizado_em       DateTime               @default(now()) @db.Timestamptz(6)
+  clientes            crm_clientes?          @relation(fields: [cliente_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  propostas           comercial_propostas?   @relation(fields: [proposta_id], references: [id], onUpdate: NoAction)
+  vendedores          comercial_vendedores?  @relation(fields: [vendedor_id], references: [id], onUpdate: NoAction)
+  comissoes           financeiro_comissoes[]
+
+  @@index([cliente_id], map: "idx_contratos_cliente")
+  @@index([status], map: "idx_contratos_status")
+  @@schema("comercial")
+}
+
+model comercial_leads {
+  id              BigInt                    @id @default(autoincrement())
+  empresa         String?                   @db.VarChar(255)
+  responsavel     String?                   @db.VarChar(150)
+  whatsapp        String?                   @db.VarChar(30)
+  email           String?                   @db.VarChar(255)
+  segmento        String?                   @db.VarChar(100)
+  cidade          String?                   @db.VarChar(100)
+  estado          String?                   @db.VarChar(2)
+  origem          String?                   @db.VarChar(100)
+  temperatura     String                    @default("frio") @db.VarChar(20)
+  status          String                    @default("novo") @db.VarChar(60)
+  vendedor_id     BigInt?
+  valor_estimado  Decimal                   @default(0) @db.Decimal(14, 2)
+  ultimo_contato  DateTime?                 @db.Timestamptz(6)
+  proximo_contato DateTime?                 @db.Timestamptz(6)
+  observacoes     String?
+  criado_em       DateTime                  @default(now()) @db.Timestamptz(6)
+  atualizado_em   DateTime                  @default(now()) @db.Timestamptz(6)
+  atividades      atividades[]
+  vendedores      comercial_vendedores?     @relation(fields: [vendedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  oportunidades   comercial_oportunidades[]
+
+  @@index([status], map: "idx_leads_status")
+  @@index([vendedor_id], map: "idx_leads_vendedor")
+  @@map("leads")
+  @@schema("comercial")
+}
+
+model metas {
+  id               BigInt               @id @default(autoincrement())
+  vendedor_id      BigInt
+  competencia      DateTime             @db.Date
+  meta_implantacao Decimal              @default(0) @db.Decimal(14, 2)
+  meta_mrr         Decimal              @default(0) @db.Decimal(14, 2)
+  meta_clientes    Int                  @default(0)
+  observacoes      String?
+  criado_em        DateTime             @default(now()) @db.Timestamptz(6)
+  atualizado_em    DateTime             @default(now()) @db.Timestamptz(6)
+  vendedores       comercial_vendedores @relation(fields: [vendedor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([vendedor_id, competencia])
+  @@index([vendedor_id], map: "idx_metas_vendedor")
+  @@schema("comercial")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model comercial_oportunidades {
+  id                  BigInt                @id @default(autoincrement())
+  lead_id             BigInt
+  vendedor_id         BigInt?
+  titulo              String                @db.VarChar(255)
+  etapa               String                @default("qualificacao") @db.VarChar(60)
+  valor               Decimal               @default(0) @db.Decimal(14, 2)
+  probabilidade       Int                   @default(0)
+  previsao_fechamento DateTime?             @db.Date
+  data_fechamento     DateTime?             @db.Date
+  status              String                @default("aberta") @db.VarChar(30)
+  motivo_perda        String?
+  criado_em           DateTime              @default(now()) @db.Timestamptz(6)
+  atualizado_em       DateTime              @default(now()) @db.Timestamptz(6)
+  atividades          atividades[]
+  leads               comercial_leads       @relation(fields: [lead_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendedores          comercial_vendedores? @relation(fields: [vendedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  propostas           comercial_propostas[]
+
+  @@index([etapa], map: "idx_oportunidades_etapa")
+  @@index([vendedor_id], map: "idx_oportunidades_vendedor")
+  @@map("oportunidades")
+  @@schema("comercial")
+}
+
+model comercial_propostas {
+  id                BigInt                   @id @default(autoincrement())
+  oportunidade_id   BigInt?
+  vendedor_id       BigInt?
+  numero            String?                  @unique @db.VarChar(50)
+  titulo            String?                  @db.VarChar(255)
+  plano             String?                  @db.VarChar(100)
+  descricao         String?
+  valor_implantacao Decimal                  @default(0) @db.Decimal(14, 2)
+  mensalidade       Decimal                  @default(0) @db.Decimal(14, 2)
+  desconto          Decimal                  @default(0) @db.Decimal(14, 2)
+  valor_total       Decimal                  @default(0) @db.Decimal(14, 2)
+  validade          DateTime?                @db.Date
+  status            String                   @default("rascunho") @db.VarChar(30)
+  enviada_em        DateTime?                @db.Timestamptz(6)
+  aprovada_em       DateTime?                @db.Timestamptz(6)
+  recusada_em       DateTime?                @db.Timestamptz(6)
+  criado_em         DateTime                 @default(now()) @db.Timestamptz(6)
+  atualizado_em     DateTime                 @default(now()) @db.Timestamptz(6)
+  contratos         contratos[]
+  proposta_itens    proposta_itens[]
+  oportunidades     comercial_oportunidades? @relation(fields: [oportunidade_id], references: [id], onUpdate: NoAction)
+  vendedores        comercial_vendedores?    @relation(fields: [vendedor_id], references: [id], onUpdate: NoAction)
+
+  @@index([status], map: "idx_propostas_status")
+  @@index([vendedor_id], map: "idx_propostas_vendedor")
+  @@map("propostas")
+  @@schema("comercial")
+}
+
+model comercial_vendedores {
+  id                  BigInt                    @id @default(autoincrement())
+  nome                String                    @db.VarChar(150)
+  email               String?                   @unique @db.VarChar(255)
+  whatsapp            String?                   @db.VarChar(30)
+  meta_mensal         Decimal                   @default(0) @db.Decimal(14, 2)
+  percentual_comissao Decimal                   @default(0) @db.Decimal(5, 2)
+  status              String                    @default("ativo") @db.VarChar(30)
+  criado_em           DateTime                  @default(now()) @db.Timestamptz(6)
+  atualizado_em       DateTime                  @default(now()) @db.Timestamptz(6)
+  atividades          atividades[]
+  contratos           contratos[]
+  leads               comercial_leads[]
+  metas               metas[]
+  oportunidades       comercial_oportunidades[]
+  propostas           comercial_propostas[]
+  comissoes           financeiro_comissoes[]
+
+  @@map("vendedores")
+  @@schema("comercial")
+}
+
+model crm_clientes {
+  id                BigInt      @id @default(autoincrement())
+  empresa_id        BigInt
+  responsavel       String?     @db.VarChar(150)
+  whatsapp          String?     @db.VarChar(30)
+  email             String?     @db.VarChar(255)
+  plano             String?     @db.VarChar(100)
+  valor_implantacao Decimal     @default(0) @db.Decimal(14, 2)
+  mensalidade       Decimal     @default(0) @db.Decimal(14, 2)
+  data_inicio       DateTime?   @db.Date
+  data_cancelamento DateTime?   @db.Date
+  status            String      @default("ativo") @db.VarChar(30)
+  observacoes       String?
+  criado_em         DateTime    @default(now()) @db.Timestamptz(6)
+  atualizado_em     DateTime    @default(now()) @db.Timestamptz(6)
+  contratos         contratos[]
+  empresas          empresas    @relation(fields: [empresa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([empresa_id], map: "idx_clientes_empresa")
+  @@map("clientes")
+  @@schema("crm")
+}
+
+model empresas {
+  id            BigInt         @id @default(autoincrement())
+  razao_social  String?        @db.VarChar(255)
+  nome_fantasia String         @db.VarChar(255)
+  cnpj          String?        @unique @db.VarChar(20)
+  segmento      String?        @db.VarChar(100)
+  telefone      String?        @db.VarChar(30)
+  email         String?        @db.VarChar(255)
+  site          String?        @db.VarChar(255)
+  cidade        String?        @db.VarChar(100)
+  estado        String?        @db.VarChar(2)
+  status        String         @default("ativa") @db.VarChar(30)
+  criado_em     DateTime       @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime       @default(now()) @db.Timestamptz(6)
+  categorias    categorias[]
+  marcas        marcas[]
+  produtos      produtos[]
+  clientes      crm_clientes[]
+
+  @@schema("crm")
+}
+
+model financeiro_comissoes {
+  id             BigInt               @id @default(autoincrement())
+  vendedor_id    BigInt
+  contrato_id    BigInt?
+  tipo           String               @default("implantacao") @db.VarChar(30)
+  base_calculo   Decimal              @default(0) @db.Decimal(14, 2)
+  percentual     Decimal              @default(0) @db.Decimal(5, 2)
+  valor_comissao Decimal              @default(0) @db.Decimal(14, 2)
+  competencia    DateTime?            @db.Date
+  status         String               @default("pendente") @db.VarChar(30)
+  pago_em        DateTime?            @db.Timestamptz(6)
+  criado_em      DateTime             @default(now()) @db.Timestamptz(6)
+  contratos      contratos?           @relation(fields: [contrato_id], references: [id], onUpdate: NoAction)
+  vendedores     comercial_vendedores @relation(fields: [vendedor_id], references: [id], onUpdate: NoAction)
+
+  @@index([status], map: "idx_comissoes_status")
+  @@index([vendedor_id], map: "idx_comissoes_vendedor")
+  @@map("comissoes")
+  @@schema("financeiro")
+}
+
+model annotation_tag_entity {
+  id                        String                      @id(map: "PK_69dfa041592c30bbc0d4b84aa00") @db.VarChar(16)
+  name                      String                      @unique(map: "IDX_ae51b54c4bb430cf92f48b623f") @db.VarChar(24)
+  createdAt                 DateTime                    @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt                 DateTime                    @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  execution_annotation_tags execution_annotation_tags[]
+
+  @@schema("public")
+}
+
+model auth_identity {
+  userId       String?  @db.Uuid
+  providerId   String   @db.VarChar(64)
+  providerType String   @db.VarChar(32)
+  createdAt    DateTime @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt    DateTime @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  user         user?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([providerId, providerType])
+  @@schema("public")
+}
+
+model auth_provider_sync_history {
+  id           Int      @id @default(autoincrement())
+  providerType String   @db.VarChar(32)
+  runMode      String
+  status       String
+  startedAt    DateTime @default(now()) @db.Timestamptz(3)
+  endedAt      DateTime @default(now()) @db.Timestamptz(3)
+  scanned      Int
+  created      Int
+  updated      Int
+  disabled     Int
+  error        String?
+
+  @@schema("public")
+}
+
+model public_clientes {
+  id             Int                @id @default(autoincrement())
+  empresa        String             @db.VarChar(255)
+  responsavel    String?            @db.VarChar(255)
+  whatsapp       String?            @db.VarChar(50)
+  email          String?            @db.VarChar(255)
+  segmento       String?            @db.VarChar(100)
+  cidade         String?            @db.VarChar(100)
+  plano          String?            @db.VarChar(100)
+  mensalidade    Decimal?           @db.Decimal(12, 2)
+  status         String?            @default("ativo") @db.VarChar(50)
+  criado_em      DateTime?          @default(now()) @db.Timestamp(6)
+  comissoes      public_comissoes[]
+  ia_tokens      ia_tokens[]
+  mensagens      mensagens[]
+  pagamentos_pix pagamentos_pix[]
+  projetos       projetos[]
+
+  @@map("clientes")
+  @@schema("public")
+}
+
+model public_comissoes {
+  id             Int                @id @default(autoincrement())
+  vendedor_id    Int?
+  cliente_id     Int?
+  valor_venda    Decimal?           @db.Decimal(12, 2)
+  percentual     Decimal?           @db.Decimal(5, 2)
+  valor_comissao Decimal?           @db.Decimal(12, 2)
+  status         String?            @default("pendente") @db.VarChar(50)
+  criado_em      DateTime?          @default(now()) @db.Timestamp(6)
+  clientes       public_clientes?   @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendedores     public_vendedores? @relation(fields: [vendedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("comissoes")
+  @@schema("public")
+}
+
+model credentials_entity {
+  name               String               @db.VarChar(128)
+  data               String
+  type               String               @db.VarChar(128)
+  createdAt          DateTime             @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt          DateTime             @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  id                 String               @id @unique(map: "pk_credentials_entity_id") @db.VarChar(36)
+  isManaged          Boolean              @default(false)
+  shared_credentials shared_credentials[]
+
+  @@index([type], map: "idx_07fde106c0b471d8cc80a64fc8")
+  @@schema("public")
+}
+
+model event_destinations {
+  id          String   @id @db.Uuid
+  destination Json
+  createdAt   DateTime @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt   DateTime @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+
+  @@schema("public")
+}
+
+model execution_annotation_tags {
+  annotationId          Int
+  tagId                 String                @db.VarChar(24)
+  annotation_tag_entity annotation_tag_entity @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a3697779b366e131b2bbdae2976")
+  execution_annotations execution_annotations @relation(fields: [annotationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c1519757391996eb06064f0e7c8")
+
+  @@id([annotationId, tagId], map: "PK_979ec03d31294cca484be65d11f")
+  @@index([tagId], map: "IDX_a3697779b366e131b2bbdae297")
+  @@index([annotationId], map: "IDX_c1519757391996eb06064f0e7c")
+  @@schema("public")
+}
+
+model execution_annotations {
+  id                        Int                         @id(map: "PK_7afcf93ffa20c4252869a7c6a23") @default(autoincrement())
+  executionId               Int                         @unique(map: "IDX_97f863fa83c4786f1956508496")
+  vote                      String?                     @db.VarChar(6)
+  note                      String?
+  createdAt                 DateTime                    @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt                 DateTime                    @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  execution_annotation_tags execution_annotation_tags[]
+  execution_entity          execution_entity            @relation(fields: [executionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_97f863fa83c4786f19565084960")
+
+  @@schema("public")
+}
+
+model execution_data {
+  executionId      Int              @id
+  workflowData     Json             @db.Json
+  data             String
+  execution_entity execution_entity @relation(fields: [executionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "execution_data_fk")
+
+  @@schema("public")
+}
+
+model execution_entity {
+  id                    Int                    @id(map: "pk_e3e63bbf986767844bbe1166d4e") @default(autoincrement())
+  finished              Boolean
+  mode                  String                 @db.VarChar
+  retryOf               String?                @db.VarChar
+  retrySuccessId        String?                @db.VarChar
+  startedAt             DateTime?              @db.Timestamptz(3)
+  stoppedAt             DateTime?              @db.Timestamptz(3)
+  waitTill              DateTime?              @db.Timestamptz(3)
+  status                String                 @db.VarChar
+  workflowId            String                 @db.VarChar(36)
+  deletedAt             DateTime?              @db.Timestamptz(3)
+  createdAt             DateTime               @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  execution_annotations execution_annotations?
+  execution_data        execution_data?
+  workflow_entity       workflow_entity        @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_execution_entity_workflow_id")
+  execution_metadata    execution_metadata[]
+  test_case_execution   test_case_execution[]
+
+  @@index([deletedAt], map: "IDX_execution_entity_deletedAt")
+  @@index([stoppedAt, status, deletedAt], map: "idx_execution_entity_stopped_at_status_deleted_at", where: raw("((\"stoppedAt\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
+  @@index([waitTill, status, deletedAt], map: "idx_execution_entity_wait_till_status_deleted_at", where: raw("((\"waitTill\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
+  @@index([workflowId, startedAt], map: "idx_execution_entity_workflow_id_started_at", where: raw("((\"startedAt\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
+  @@schema("public")
+}
+
+model execution_metadata {
+  id               Int              @id(map: "PK_17a0b6284f8d626aae88e1c16e4") @default(autoincrement())
+  executionId      Int
+  key              String           @db.VarChar(255)
+  value            String
+  execution_entity execution_entity @relation(fields: [executionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_31d0b4c93fb85ced26f6005cda3")
+
+  @@unique([executionId, key], map: "IDX_cec8eea3bf49551482ccb4933e")
+  @@schema("public")
+}
+
+model folder {
+  id              String            @id(map: "PK_6278a41a706740c94c02e288df8") @db.VarChar(36)
+  name            String            @db.VarChar(128)
+  parentFolderId  String?           @db.VarChar(36)
+  projectId       String            @db.VarChar(36)
+  createdAt       DateTime          @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt       DateTime          @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  folder          folder?           @relation("folderTofolder", fields: [parentFolderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_804ea52f6729e3940498bd54d78")
+  other_folder    folder[]          @relation("folderTofolder")
+  project         project           @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a8260b0b36939c6247f385b8221")
+  folder_tag      folder_tag[]
+  workflow_entity workflow_entity[]
+
+  @@unique([projectId, id], map: "IDX_14f68deffaf858465715995508")
+  @@schema("public")
+}
+
+model folder_tag {
+  folderId   String     @db.VarChar(36)
+  tagId      String     @db.VarChar(36)
+  folder     folder     @relation(fields: [folderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_94a60854e06f2897b2e0d39edba")
+  tag_entity tag_entity @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dc88164176283de80af47621746")
+
+  @@id([folderId, tagId], map: "PK_27e4e00852f6b06a925a4d83a3e")
+  @@schema("public")
+}
+
+model ia_tokens {
+  id             Int              @id @default(autoincrement())
+  cliente_id     Int?
+  modelo         String?          @db.VarChar(100)
+  tokens_entrada Int?
+  tokens_saida   Int?
+  custo_estimado Decimal?         @db.Decimal(12, 4)
+  criado_em      DateTime?        @default(now()) @db.Timestamp(6)
+  clientes       public_clientes? @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model insights_by_period {
+  id                Int               @id(map: "PK_b606942249b90cc39b0265f0575") @default(autoincrement())
+  metaId            Int
+  type              Int
+  value             Int
+  periodUnit        Int
+  periodStart       DateTime?         @default(now()) @db.Timestamptz(0)
+  insights_metadata insights_metadata @relation(fields: [metaId], references: [metaId], onDelete: Cascade, onUpdate: NoAction, map: "FK_6414cfed98daabbfdd61a1cfbc0")
+
+  @@unique([periodStart, type, periodUnit, metaId], map: "IDX_60b6a84299eeb3f671dfec7693")
+  @@schema("public")
+}
+
+model insights_metadata {
+  metaId             Int                  @id(map: "PK_f448a94c35218b6208ce20cf5a1") @default(autoincrement())
+  workflowId         String?              @unique(map: "IDX_1d8ab99d5861c9388d2dc1cf73") @db.VarChar(16)
+  projectId          String?              @db.VarChar(36)
+  workflowName       String               @db.VarChar(128)
+  projectName        String               @db.VarChar(255)
+  insights_by_period insights_by_period[]
+  workflow_entity    workflow_entity?     @relation(fields: [workflowId], references: [id], onUpdate: NoAction, map: "FK_1d8ab99d5861c9388d2dc1cf733")
+  project            project?             @relation(fields: [projectId], references: [id], onUpdate: NoAction, map: "FK_2375a1eda085adb16b24615b69c")
+  insights_raw       insights_raw[]
+
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model insights_raw {
+  id                Int               @id(map: "PK_ec15125755151e3a7e00e00014f") @default(autoincrement())
+  metaId            Int
+  type              Int
+  value             Int
+  timestamp         DateTime          @default(now()) @db.Timestamptz(0)
+  insights_metadata insights_metadata @relation(fields: [metaId], references: [metaId], onDelete: Cascade, onUpdate: NoAction, map: "FK_6e2e33741adef2a7c5d66befa4e")
+
+  @@schema("public")
+}
+
+model installed_nodes {
+  name               String             @id(map: "PK_8ebd28194e4f792f96b5933423fc439df97d9689") @db.VarChar(200)
+  type               String             @db.VarChar(200)
+  latestVersion      Int                @default(1)
+  package            String             @db.VarChar(241)
+  installed_packages installed_packages @relation(fields: [package], references: [packageName], onDelete: Cascade, map: "FK_73f857fc5dce682cef8a99c11dbddbc969618951")
+
+  @@schema("public")
+}
+
+model installed_packages {
+  packageName      String            @id(map: "PK_08cc9197c39b028c1e9beca225940576fd1a5804") @db.VarChar(214)
+  installedVersion String            @db.VarChar(50)
+  authorName       String?           @db.VarChar(70)
+  authorEmail      String?           @db.VarChar(70)
+  createdAt        DateTime          @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt        DateTime          @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  installed_nodes  installed_nodes[]
+
+  @@schema("public")
+}
+
+model invalid_auth_token {
+  token     String   @id(map: "PK_5779069b7235b256d91f7af1a15") @db.VarChar(512)
+  expiresAt DateTime @db.Timestamptz(3)
+
+  @@schema("public")
+}
+
+model public_leads {
+  id              Int                    @id @default(autoincrement())
+  empresa         String?                @db.VarChar(255)
+  responsavel     String?                @db.VarChar(255)
+  whatsapp        String?                @db.VarChar(50)
+  segmento        String?                @db.VarChar(100)
+  cidade          String?                @db.VarChar(100)
+  origem          String?                @db.VarChar(100)
+  status          String?                @default("novo lead") @db.VarChar(80)
+  temperatura     String?                @db.VarChar(50)
+  vendedor_id     Int?
+  valor_estimado  Decimal?               @db.Decimal(12, 2)
+  proximo_contato DateTime?              @db.Date
+  criado_em       DateTime?              @default(now()) @db.Timestamp(6)
+  vendedores      public_vendedores?     @relation(fields: [vendedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  mensagens       mensagens[]
+  oportunidades   public_oportunidades[]
+  propostas       public_propostas[]
+
+  @@map("leads")
+  @@schema("public")
+}
+
+model mensagens {
+  id                      Int              @id @default(autoincrement())
+  cliente_id              Int?
+  lead_id                 Int?
+  whatsapp                String?          @db.VarChar(50)
+  direcao                 String?          @db.VarChar(20)
+  mensagem                String?
+  respondida_por          String?          @db.VarChar(50)
+  tempo_resposta_segundos Int?
+  criado_em               DateTime?        @default(now()) @db.Timestamp(6)
+  clientes                public_clientes? @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  leads                   public_leads?    @relation(fields: [lead_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model migrations {
+  id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
+  timestamp BigInt
+  name      String @db.VarChar
+
+  @@schema("public")
+}
+
+model public_oportunidades {
+  id            Int                @id @default(autoincrement())
+  lead_id       Int?
+  vendedor_id   Int?
+  etapa         String?            @db.VarChar(80)
+  valor         Decimal?           @db.Decimal(12, 2)
+  probabilidade Int?
+  status        String?            @db.VarChar(50)
+  criado_em     DateTime?          @default(now()) @db.Timestamp(6)
+  leads         public_leads?      @relation(fields: [lead_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendedores    public_vendedores? @relation(fields: [vendedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("oportunidades")
+  @@schema("public")
+}
+
+model pagamentos_pix {
+  id         Int              @id @default(autoincrement())
+  cliente_id Int?
+  descricao  String?          @db.VarChar(255)
+  valor      Decimal?         @db.Decimal(12, 2)
+  status     String?          @default("pendente") @db.VarChar(50)
+  txid       String?          @db.VarChar(255)
+  pago_em    DateTime?        @db.Timestamp(6)
+  criado_em  DateTime?        @default(now()) @db.Timestamp(6)
+  clientes   public_clientes? @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model processed_data {
+  workflowId      String          @db.VarChar(36)
+  context         String          @db.VarChar(255)
+  createdAt       DateTime        @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt       DateTime        @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  value           String
+  workflow_entity workflow_entity @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_06a69a7032c97a763c2c7599464")
+
+  @@id([workflowId, context], map: "PK_ca04b9d8dc72de268fe07a65773")
+  @@schema("public")
+}
+
+model project {
+  id                 String               @id(map: "PK_4d68b1358bb5b766d3e78f32f57") @db.VarChar(36)
+  name               String               @db.VarChar(255)
+  type               String               @db.VarChar(36)
+  createdAt          DateTime             @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt          DateTime             @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  icon               Json?                @db.Json
+  description        String?              @db.VarChar(512)
+  folder             folder[]
+  insights_metadata  insights_metadata[]
+  project_relation   project_relation[]
+  shared_credentials shared_credentials[]
+  shared_workflow    shared_workflow[]
+
+  @@schema("public")
+}
+
+model project_relation {
+  projectId String   @db.VarChar(36)
+  userId    String   @db.Uuid
+  role      String   @db.VarChar
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5f0643f6717905a05164090dde7")
+  project   project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_61448d56d61802b5dfde5cdb002")
+
+  @@id([projectId, userId], map: "PK_1caaa312a5d7184a003be0f0cb6")
+  @@index([userId], map: "IDX_5f0643f6717905a05164090dde")
+  @@index([projectId], map: "IDX_61448d56d61802b5dfde5cdb00")
+  @@schema("public")
+}
+
+model projetos {
+  id          Int              @id @default(autoincrement())
+  cliente_id  Int?
+  nome        String?          @db.VarChar(255)
+  plano       String?          @db.VarChar(100)
+  etapa       String?          @db.VarChar(100)
+  responsavel String?          @db.VarChar(255)
+  prazo       DateTime?        @db.Date
+  status      String?          @default("em andamento") @db.VarChar(50)
+  criado_em   DateTime?        @default(now()) @db.Timestamp(6)
+  clientes    public_clientes? @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model public_propostas {
+  id                Int                @id @default(autoincrement())
+  lead_id           Int?
+  vendedor_id       Int?
+  plano             String?            @db.VarChar(100)
+  valor_implantacao Decimal?           @db.Decimal(12, 2)
+  mensalidade       Decimal?           @db.Decimal(12, 2)
+  status            String?            @default("enviada") @db.VarChar(50)
+  enviado_em        DateTime?          @default(now()) @db.Timestamp(6)
+  leads             public_leads?      @relation(fields: [lead_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendedores        public_vendedores? @relation(fields: [vendedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("propostas")
+  @@schema("public")
+}
+
+model settings {
+  key           String  @id(map: "PK_dc0fe14e6d9943f268e7b119f69ab8bd") @db.VarChar(255)
+  value         String
+  loadOnStartup Boolean @default(false)
+
+  @@schema("public")
+}
+
+model shared_credentials {
+  credentialsId      String             @db.VarChar(36)
+  projectId          String             @db.VarChar(36)
+  role               String
+  createdAt          DateTime           @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt          DateTime           @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  credentials_entity credentials_entity @relation(fields: [credentialsId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_416f66fc846c7c442970c094ccf")
+  project            project            @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_812c2852270da1247756e77f5a4")
+
+  @@id([credentialsId, projectId], map: "PK_8ef3a59796a228913f251779cff")
+  @@schema("public")
+}
+
+model shared_workflow {
+  workflowId      String          @db.VarChar(36)
+  projectId       String          @db.VarChar(36)
+  role            String
+  createdAt       DateTime        @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt       DateTime        @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  project         project         @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a45ea5f27bcfdc21af9b4188560")
+  workflow_entity workflow_entity @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_daa206a04983d47d0a9c34649ce")
+
+  @@id([workflowId, projectId], map: "PK_5ba87620386b847201c9531c58f")
+  @@schema("public")
+}
+
+model tag_entity {
+  name           String           @unique(map: "idx_812eb05f7451ca757fb98444ce") @db.VarChar(24)
+  createdAt      DateTime         @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt      DateTime         @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  id             String           @id @unique(map: "pk_tag_entity_id") @db.VarChar(36)
+  folder_tag     folder_tag[]
+  workflows_tags workflows_tags[]
+
+  @@schema("public")
+}
+
+model test_case_execution {
+  id               String            @id(map: "PK_90c121f77a78a6580e94b794bce") @db.VarChar(36)
+  testRunId        String            @db.VarChar(36)
+  executionId      Int?
+  status           String            @db.VarChar
+  runAt            DateTime?         @db.Timestamptz(3)
+  completedAt      DateTime?         @db.Timestamptz(3)
+  errorCode        String?           @db.VarChar
+  errorDetails     Json?             @db.Json
+  metrics          Json?             @db.Json
+  createdAt        DateTime          @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt        DateTime          @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  test_run         test_run          @relation(fields: [testRunId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8e4b4774db42f1e6dda3452b2af")
+  execution_entity execution_entity? @relation(fields: [executionId], references: [id], onUpdate: NoAction, map: "FK_e48965fac35d0f5b9e7f51d8c44")
+
+  @@index([testRunId], map: "IDX_8e4b4774db42f1e6dda3452b2a")
+  @@schema("public")
+}
+
+model test_run {
+  id                  String                @id(map: "PK_011c050f566e9db509a0fadb9b9") @db.VarChar(36)
+  workflowId          String                @db.VarChar(36)
+  status              String                @db.VarChar
+  errorCode           String?               @db.VarChar
+  errorDetails        Json?                 @db.Json
+  runAt               DateTime?             @db.Timestamptz(3)
+  completedAt         DateTime?             @db.Timestamptz(3)
+  metrics             Json?                 @db.Json
+  createdAt           DateTime              @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt           DateTime              @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  test_case_execution test_case_execution[]
+  workflow_entity     workflow_entity       @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d6870d3b6e4c185d33926f423c8")
+
+  @@index([workflowId], map: "IDX_d6870d3b6e4c185d33926f423c")
+  @@schema("public")
+}
+
+model user {
+  id                     String             @id(map: "PK_ea8f538c94b6e352418254ed6474a81f") @default(dbgenerated("uuid_in((OVERLAY(OVERLAY(md5((((random())::text || ':'::text) || (clock_timestamp())::text)) PLACING '4'::text FROM 13) PLACING to_hex((floor(((random() * (((11 - 8) + 1))::double precision) + (8)::double precision)))::integer) FROM 17))::cstring)")) @db.Uuid
+  email                  String?            @unique(map: "UQ_e12875dfb3b1d92d7d7c5377e2") @db.VarChar(255)
+  firstName              String?            @db.VarChar(32)
+  lastName               String?            @db.VarChar(32)
+  password               String?            @db.VarChar(255)
+  personalizationAnswers Json?              @db.Json
+  createdAt              DateTime           @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt              DateTime           @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  settings               Json?              @db.Json
+  disabled               Boolean            @default(false)
+  mfaEnabled             Boolean            @default(false)
+  mfaSecret              String?
+  mfaRecoveryCodes       String?
+  role                   String
+  lastActiveAt           DateTime?          @db.Date
+  auth_identity          auth_identity[]
+  project_relation       project_relation[]
+  user_api_keys          user_api_keys[]
+
+  @@schema("public")
+}
+
+model user_api_keys {
+  id        String   @id(map: "PK_978fa5caa3468f463dac9d92e69") @db.VarChar(36)
+  userId    String   @db.Uuid
+  label     String   @db.VarChar(100)
+  apiKey    String   @unique(map: "IDX_1ef35bac35d20bdae979d917a3") @db.VarChar
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  scopes    Json?    @db.Json
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e131705cbbc8fb589889b02d457")
+
+  @@unique([userId, label], map: "IDX_63d7bbae72c767cf162d459fcc")
+  @@schema("public")
+}
+
+model variables {
+  key   String  @unique @db.VarChar(50)
+  type  String  @default("string") @db.VarChar(50)
+  value String? @db.VarChar(255)
+  id    String  @id @unique(map: "pk_variables_id") @db.VarChar(36)
+
+  @@schema("public")
+}
+
+model public_vendedores {
+  id            Int                    @id @default(autoincrement())
+  nome          String                 @db.VarChar(255)
+  whatsapp      String?                @db.VarChar(50)
+  email         String?                @db.VarChar(255)
+  meta_mensal   Decimal?               @db.Decimal(12, 2)
+  status        String?                @default("ativo") @db.VarChar(50)
+  criado_em     DateTime?              @default(now()) @db.Timestamp(6)
+  comissoes     public_comissoes[]
+  leads         public_leads[]
+  oportunidades public_oportunidades[]
+  propostas     public_propostas[]
+
+  @@map("vendedores")
+  @@schema("public")
+}
+
+model webhook_entity {
+  webhookPath     String          @db.VarChar
+  method          String          @db.VarChar
+  node            String          @db.VarChar
+  webhookId       String?         @db.VarChar
+  pathLength      Int?
+  workflowId      String          @db.VarChar(36)
+  workflow_entity workflow_entity @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_webhook_entity_workflow_id")
+
+  @@id([webhookPath, method], map: "PK_b21ace2e13596ccd87dc9bf4ea6")
+  @@index([webhookId, method, pathLength], map: "idx_16f4436789e804e3e1c9eeb240")
+  @@schema("public")
+}
+
+model workflow_entity {
+  name                String                @db.VarChar(128)
+  active              Boolean
+  nodes               Json                  @db.Json
+  connections         Json                  @db.Json
+  createdAt           DateTime              @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt           DateTime              @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  settings            Json?                 @db.Json
+  staticData          Json?                 @db.Json
+  pinData             Json?                 @db.Json
+  versionId           String?               @db.Char(36)
+  triggerCount        Int                   @default(0)
+  id                  String                @id @unique(map: "pk_workflow_entity_id") @db.VarChar(36)
+  meta                Json?                 @db.Json
+  parentFolderId      String?               @db.VarChar(36)
+  isArchived          Boolean               @default(false)
+  execution_entity    execution_entity[]
+  insights_metadata   insights_metadata?
+  processed_data      processed_data[]
+  shared_workflow     shared_workflow[]
+  test_run            test_run[]
+  webhook_entity      webhook_entity[]
+  folder              folder?               @relation(fields: [parentFolderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_workflow_parent_folder")
+  workflow_history    workflow_history[]
+  workflow_statistics workflow_statistics[]
+  workflows_tags      workflows_tags[]
+
+  @@index([name], map: "IDX_workflow_entity_name")
+  @@schema("public")
+}
+
+model workflow_history {
+  versionId       String          @id(map: "PK_b6572dd6173e4cd06fe79937b58") @db.VarChar(36)
+  workflowId      String          @db.VarChar(36)
+  authors         String          @db.VarChar(255)
+  createdAt       DateTime        @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  updatedAt       DateTime        @default(dbgenerated("CURRENT_TIMESTAMP(3)")) @db.Timestamptz(3)
+  nodes           Json            @db.Json
+  connections     Json            @db.Json
+  workflow_entity workflow_entity @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1e31657f5fe46816c34be7c1b4b")
+
+  @@index([workflowId], map: "IDX_1e31657f5fe46816c34be7c1b4")
+  @@schema("public")
+}
+
+model workflow_statistics {
+  count           Int?            @default(0)
+  latestEvent     DateTime?       @db.Timestamptz(3)
+  name            String          @db.VarChar(128)
+  workflowId      String          @db.VarChar(36)
+  rootCount       Int?            @default(0)
+  workflow_entity workflow_entity @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_workflow_statistics_workflow_id")
+
+  @@id([workflowId, name], map: "pk_workflow_statistics")
+  @@schema("public")
+}
+
+model workflows_tags {
+  workflowId      String          @db.VarChar(36)
+  tagId           String          @db.VarChar(36)
+  tag_entity      tag_entity      @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_workflows_tags_tag_id")
+  workflow_entity workflow_entity @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_workflows_tags_workflow_id")
+
+  @@id([workflowId, tagId], map: "pk_workflows_tags")
+  @@index([workflowId], map: "idx_workflows_tags_workflow_id")
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model categorias {
+  id            BigInt     @id @default(autoincrement())
+  empresa_id    BigInt
+  nome          String     @db.VarChar(120)
+  descricao     String?
+  status        String     @default("ativo") @db.VarChar(20)
+  criado_em     DateTime   @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime   @default(now()) @db.Timestamptz(6)
+  empresas      empresas   @relation(fields: [empresa_id], references: [id], onUpdate: NoAction, map: "categorias_empresa_fk")
+  produtos      produtos[]
+
+  @@unique([empresa_id, nome], map: "categorias_empresa_nome_unique")
+  @@index([empresa_id], map: "idx_categorias_empresa")
+  @@index([status], map: "idx_categorias_status")
+  @@schema("catalogo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model marcas {
+  id            BigInt     @id @default(autoincrement())
+  empresa_id    BigInt
+  nome          String     @db.VarChar(120)
+  fabricante    String?    @db.VarChar(150)
+  descricao     String?
+  status        String     @default("ativo") @db.VarChar(20)
+  criado_em     DateTime   @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime   @default(now()) @db.Timestamptz(6)
+  empresas      empresas   @relation(fields: [empresa_id], references: [id], onUpdate: NoAction, map: "marcas_empresa_fk")
+  produtos      produtos[]
+
+  @@unique([empresa_id, nome], map: "marcas_empresa_nome_unique")
+  @@index([empresa_id], map: "idx_marcas_empresa")
+  @@index([status], map: "idx_marcas_status")
+  @@schema("catalogo")
+}
+
+model produto_aplicacoes {
+  id          BigInt   @id @default(autoincrement())
+  produto_id  BigInt
+  veiculo_id  BigInt
+  observacoes String?
+  criado_em   DateTime @default(now()) @db.Timestamptz(6)
+  produtos    produtos @relation(fields: [produto_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "produto_aplicacoes_produto_fk")
+  veiculos    veiculos @relation(fields: [veiculo_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "produto_aplicacoes_veiculo_fk")
+
+  @@unique([produto_id, veiculo_id], map: "produto_aplicacoes_unique")
+  @@index([produto_id], map: "idx_produto_aplicacoes_produto")
+  @@index([veiculo_id], map: "idx_produto_aplicacoes_veiculo")
+  @@schema("catalogo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model produtos {
+  id                        BigInt               @id @default(autoincrement())
+  empresa_id                BigInt
+  categoria_id              BigInt?
+  marca_id                  BigInt?
+  codigo_interno            String               @db.VarChar(100)
+  codigo_fabricante         String?              @db.VarChar(120)
+  ean                       String?              @db.VarChar(30)
+  descricao                 String               @db.VarChar(255)
+  descricao_completa        String?
+  fabricante                String?              @db.VarChar(150)
+  ncm                       String?              @db.VarChar(20)
+  preco                     Decimal              @default(0) @db.Decimal(14, 2)
+  preco_promocional         Decimal?             @db.Decimal(14, 2)
+  custo                     Decimal?             @db.Decimal(14, 2)
+  estoque                   Decimal              @default(0) @db.Decimal(14, 3)
+  estoque_minimo            Decimal              @default(0) @db.Decimal(14, 3)
+  unidade                   String               @default("UN") @db.VarChar(20)
+  peso_kg                   Decimal?             @db.Decimal(10, 3)
+  localizacao               String?              @db.VarChar(100)
+  imagem_url                String?
+  permite_venda_sem_estoque Boolean              @default(false)
+  status                    String               @default("ativo") @db.VarChar(20)
+  criado_em                 DateTime             @default(now()) @db.Timestamptz(6)
+  atualizado_em             DateTime             @default(now()) @db.Timestamptz(6)
+  codigo_oem                String?              @db.VarChar(120)
+  codigo_original           String?              @db.VarChar(120)
+  subcategoria              String?              @db.VarChar(150)
+  cest                      String?              @db.VarChar(20)
+  origem                    String?              @db.VarChar(80)
+  garantia_meses            Int?
+  comprimento_cm            Decimal?             @db.Decimal(10, 2)
+  largura_cm                Decimal?             @db.Decimal(10, 2)
+  altura_cm                 Decimal?             @db.Decimal(10, 2)
+  volume_m3                 Decimal?             @db.Decimal(10, 4)
+  produto_aplicacoes        produto_aplicacoes[]
+  categorias                categorias?          @relation(fields: [categoria_id], references: [id], onUpdate: NoAction, map: "produtos_categoria_fk")
+  empresas                  empresas             @relation(fields: [empresa_id], references: [id], onUpdate: NoAction, map: "produtos_empresa_fk")
+  marcas                    marcas?              @relation(fields: [marca_id], references: [id], onUpdate: NoAction, map: "produtos_marca_fk")
+  proposta_itens            proposta_itens[]
+
+  @@unique([empresa_id, codigo_interno], map: "produtos_empresa_codigo_unique")
+  @@index([categoria_id], map: "idx_produtos_categoria")
+  @@index([codigo_fabricante], map: "idx_produtos_codigo_fabricante")
+  @@index([ean], map: "idx_produtos_ean")
+  @@index([empresa_id], map: "idx_produtos_empresa")
+  @@index([marca_id], map: "idx_produtos_marca")
+  @@index([status], map: "idx_produtos_status")
+  @@schema("catalogo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model veiculos {
+  id                 BigInt               @id @default(autoincrement())
+  montadora          String               @db.VarChar(100)
+  modelo             String               @db.VarChar(120)
+  versao             String?              @db.VarChar(150)
+  motor              String?              @db.VarChar(100)
+  combustivel        String?              @db.VarChar(50)
+  ano_inicial        Int?                 @db.SmallInt
+  ano_final          Int?                 @db.SmallInt
+  observacoes        String?
+  status             String               @default("ativo") @db.VarChar(20)
+  criado_em          DateTime             @default(now()) @db.Timestamptz(6)
+  atualizado_em      DateTime             @default(now()) @db.Timestamptz(6)
+  produto_aplicacoes produto_aplicacoes[]
+
+  @@unique([montadora, modelo, versao, motor, combustivel, ano_inicial, ano_final], map: "veiculos_identificacao_unique")
+  @@index([modelo], map: "idx_veiculos_modelo")
+  @@index([montadora], map: "idx_veiculos_montadora")
+  @@index([motor], map: "idx_veiculos_motor")
+  @@schema("catalogo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model proposta_itens {
+  id             BigInt              @id @default(autoincrement())
+  proposta_id    BigInt
+  produto_id     BigInt?
+  codigo_produto String?             @db.VarChar(100)
+  descricao      String              @db.VarChar(255)
+  quantidade     Decimal             @default(1) @db.Decimal(14, 3)
+  valor_unitario Decimal             @default(0) @db.Decimal(14, 2)
+  desconto       Decimal             @default(0) @db.Decimal(14, 2)
+  valor_total    Decimal             @default(0) @db.Decimal(14, 2)
+  observacoes    String?
+  criado_em      DateTime            @default(now()) @db.Timestamptz(6)
+  atualizado_em  DateTime            @default(now()) @db.Timestamptz(6)
+  produtos       produtos?           @relation(fields: [produto_id], references: [id], onUpdate: NoAction, map: "proposta_itens_produto_fk")
+  propostas      comercial_propostas @relation(fields: [proposta_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "proposta_itens_proposta_fk")
+
+  @@index([produto_id], map: "idx_proposta_itens_produto")
+  @@index([proposta_id], map: "idx_proposta_itens_proposta")
+  @@schema("comercial")
+}

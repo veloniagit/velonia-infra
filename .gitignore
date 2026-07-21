@@ -1,29 +1,96 @@
-# Environment
+# ==========================================================
+# VELON IA — ARQUIVOS SECRETOS
+# ==========================================================
+
 .env
+.env.*
+!.env.example
 
-# SSL
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Certificados automáticos do Traefik
 traefik/acme.json
+**/acme.json
 
-# Logs
-logs/
+# ==========================================================
+# BACKUPS E EXPORTAÇÕES
+# ==========================================================
+
+backups/
+backup/
+*.backup
+*.bak
+*.dump
+*.tar
+*.tar.gz
+*.zip
+
+backup-instancia-*.json
+evolution-instancias-*.json
+
+# ==========================================================
+# ARQUIVOS TEMPORÁRIOS
+# ==========================================================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*.save
+*~
 *.log
 
-# Backups
-backups/
+# Arquivos criados acidentalmente como argumentos de terminal
+--force-recreate
+--format
+--pull
 
-# PostgreSQL
-postgres/backups/
+# ==========================================================
+# DEPENDÊNCIAS
+# ==========================================================
 
-# Docker
-*.pid
+node_modules/
+vendor/
+__pycache__/
+*.pyc
 
-# Editor
+# ==========================================================
+# BUILD E CACHE
+# ==========================================================
+
+dist/
+build/
+.next/
+.cache/
+coverage/
+
+# ==========================================================
+# EDITORES E SISTEMA OPERACIONAL
+# ==========================================================
+
 .vscode/
 .idea/
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Temporary
-*.tmp
+# ==========================================================
+# DOCKER E DADOS LOCAIS
+# ==========================================================
+
+docker-data/
+volumes/
+postgres-data/
+redis-data/
+evolution-data/
+
+# ==========================================================
+# ARQUIVOS LOCAIS OU CÓPIAS DE CONFIGURAÇÃO
+# ==========================================================
+
+*.yml.backup
+*.yaml.backup
+*.backup-*

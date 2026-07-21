@@ -7,6 +7,8 @@ include:
   - compose/evolution.yml
   - compose/n8n.yml
   - compose/portainer.yml
+  - compose/metabase.yml
+  - compose/velon-web.yml
 
 networks:
   velonia_network:
