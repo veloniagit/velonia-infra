@@ -16,6 +16,11 @@ const menuPrincipal: MenuItem[] = [
     icone: "◫",
   },
   {
+    nome: "Leads",
+    href: "/leads",
+    icone: "◉",
+  },
+  {
     nome: "CRM",
     href: "/clientes",
     icone: "◎",

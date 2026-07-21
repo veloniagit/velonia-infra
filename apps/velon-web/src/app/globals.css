@@ -2021,3 +2021,419 @@ td small {
     flex-wrap: wrap;
   }
 }
+
+/* ==================================================
+   CRM COMERCIAL — LEADS
+   ================================================== */
+
+.velon-leads-page {
+  display: grid;
+  gap: 22px;
+}
+
+.velon-leads-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.velon-leads-header h1 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  letter-spacing: -0.04em;
+}
+
+.velon-leads-header > div > p:last-child {
+  margin: 0;
+  color: var(--velon-text-muted, #697386);
+}
+
+.velon-leads-indicators {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.velon-lead-indicator {
+  padding: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  background: var(--velon-panel, #ffffff);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.velon-lead-indicator span,
+.velon-lead-indicator small {
+  display: block;
+  color: var(--velon-text-muted, #697386);
+}
+
+.velon-lead-indicator strong {
+  display: block;
+  margin: 8px 0 5px;
+  font-size: 1.65rem;
+}
+
+.velon-lead-alert {
+  padding: 13px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.velon-lead-alert-success {
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+}
+
+.velon-lead-alert-error {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+.velon-leads-toolbar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) repeat(3, minmax(150px, 210px));
+  gap: 12px;
+}
+
+.velon-leads-toolbar input,
+.velon-leads-toolbar select,
+.velon-lead-form input,
+.velon-lead-form select,
+.velon-lead-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: inherit;
+  background: var(--velon-panel, #ffffff);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  outline: none;
+}
+
+.velon-leads-toolbar input:focus,
+.velon-leads-toolbar select:focus,
+.velon-lead-form input:focus,
+.velon-lead-form select:focus,
+.velon-lead-form textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.velon-leads-table-panel {
+  overflow: hidden;
+  background: var(--velon-panel, #ffffff);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+}
+
+.velon-leads-table-wrapper {
+  overflow-x: auto;
+}
+
+.velon-leads-table {
+  width: 100%;
+  min-width: 1150px;
+  border-collapse: collapse;
+}
+
+.velon-leads-table th,
+.velon-leads-table td {
+  padding: 15px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.velon-leads-table th {
+  color: var(--velon-text-muted, #697386);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.velon-leads-table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.025);
+}
+
+.velon-lead-main {
+  display: grid;
+  gap: 4px;
+}
+
+.velon-lead-main span,
+.velon-lead-main a {
+  color: var(--velon-text-muted, #697386);
+  font-size: 0.83rem;
+}
+
+.velon-lead-main a {
+  color: #16a34a;
+  text-decoration: none;
+}
+
+.velon-lead-status,
+.velon-lead-temperature {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.velon-lead-status-novo {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.velon-lead-status-contato_realizado {
+  color: #6d28d9;
+  background: #ede9fe;
+}
+
+.velon-lead-status-qualificado {
+  color: #0f766e;
+  background: #ccfbf1;
+}
+
+.velon-lead-status-proposta,
+.velon-lead-status-negociacao {
+  color: #a16207;
+  background: #fef3c7;
+}
+
+.velon-lead-status-fechado {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.velon-lead-status-perdido {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.velon-lead-temperature-frio {
+  color: #0369a1;
+  background: #e0f2fe;
+}
+
+.velon-lead-temperature-morno {
+  color: #a16207;
+  background: #fef3c7;
+}
+
+.velon-lead-temperature-quente {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.velon-lead-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.velon-lead-actions button {
+  padding: 7px 10px;
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  background: transparent;
+}
+
+.velon-lead-actions .velon-lead-delete {
+  color: #dc2626;
+}
+
+.velon-leads-empty {
+  min-height: 260px;
+  display: grid;
+  place-content: center;
+  gap: 7px;
+  text-align: center;
+  color: var(--velon-text-muted, #697386);
+}
+
+.velon-lead-modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.velon-lead-modal {
+  width: min(900px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--velon-panel, #ffffff);
+  border-radius: 20px;
+  box-shadow: 0 30px 100px rgba(2, 6, 23, 0.35);
+}
+
+.velon-lead-modal-header {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 24px;
+  background: var(--velon-panel, #ffffff);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.velon-lead-modal-header h2 {
+  margin: 3px 0 0;
+}
+
+.velon-lead-modal-header > button {
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  font-size: 1.6rem;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.velon-lead-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 24px;
+}
+
+.velon-lead-form label {
+  display: grid;
+  gap: 7px;
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.velon-lead-form textarea {
+  resize: vertical;
+}
+
+.velon-lead-form-full,
+.velon-lead-form-actions {
+  grid-column: 1 / -1;
+}
+
+.velon-lead-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+@media (max-width: 1100px) {
+  .velon-leads-indicators {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .velon-leads-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .velon-leads-toolbar input {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 680px) {
+  .velon-leads-header {
+    display: grid;
+  }
+
+  .velon-leads-indicators,
+  .velon-leads-toolbar,
+  .velon-lead-form {
+    grid-template-columns: 1fr;
+  }
+
+  .velon-leads-toolbar input,
+  .velon-lead-form-full,
+  .velon-lead-form-actions {
+    grid-column: auto;
+  }
+
+  .velon-lead-modal-backdrop {
+    padding: 0;
+  }
+
+  .velon-lead-modal {
+    width: 100%;
+    max-height: 100vh;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+}
+
+/* ==================================================
+   CORREÇÃO DE CONTRASTE — MODAL DE LEADS
+   ================================================== */
+
+.velon-lead-modal {
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+
+.velon-lead-modal-header {
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+
+.velon-lead-modal-header h2 {
+  color: #0f172a !important;
+}
+
+.velon-lead-modal .velon-eyebrow {
+  color: #2563eb !important;
+}
+
+.velon-lead-form label {
+  color: #334155 !important;
+}
+
+.velon-lead-form input,
+.velon-lead-form select,
+.velon-lead-form textarea {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+.velon-lead-form input::placeholder,
+.velon-lead-form textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+.velon-lead-form select option {
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+
+.velon-lead-modal-header > button {
+  color: #475569 !important;
+  background: #f1f5f9 !important;
+}
+
+.velon-lead-form .velon-button:not(.velon-button-primary) {
+  color: #334155 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.velon-lead-form .velon-button-primary {
+  color: #ffffff !important;
+  background: #2563eb !important;
+}
